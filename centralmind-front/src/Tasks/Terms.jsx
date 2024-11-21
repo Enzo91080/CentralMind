@@ -28,7 +28,11 @@ export default function Terms({ fetchTerms, terms }) {
   const [form] = Form.useForm();
 
   useEffect(() => {
-    setFilteredTerms(terms); // Initialise les termes filtrés avec les termes
+    if (Array.isArray(terms)) {
+      setFilteredTerms(terms); // Initialise les termes filtrés avec les termes
+    } else {
+      setFilteredTerms([]); // Initialise avec une liste vide si terms n'est pas un tableau
+    }
   }, [terms]);
 
   const handleSearch = (query) => {
@@ -253,7 +257,7 @@ export default function Terms({ fetchTerms, terms }) {
             rules={[{ required: true, message: "La catégorie est requise !" }]}
           >
             <Select placeholder="Sélectionnez une catégorie">
-              {terms.map((category) => (
+              {Array.isArray(terms) && terms.map((category) => (
                 <Select.Option key={category._id} value={category._id}>
                   {category.name}
                 </Select.Option>
@@ -286,7 +290,7 @@ export default function Terms({ fetchTerms, terms }) {
               allowClear
               placeholder="Sélectionnez les termes liés"
             >
-              {filteredTerms.map((term) => (
+              {Array.isArray(filteredTerms) && filteredTerms.map((term) => (
                 <Select.Option key={term._id} value={term._id}>
                   {term.word}
                 </Select.Option>
