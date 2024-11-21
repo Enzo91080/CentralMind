@@ -5,7 +5,7 @@ import { message } from "antd";
 
 export default function LandingPage() {
   const [terms, setTerms] = useState([]);
-  
+
   const fetchTerms = async () => {
     try {
       const response = await termApi.getAllTerms();
@@ -15,23 +15,24 @@ export default function LandingPage() {
       console.error("Error fetching tasks:", err);
     }
   };
-  
+
   useEffect(() => {
     fetchTerms();
   }, []);
 
   return (
-
     <div>
       {/* mapper les valeurs */}
-      {terms.map((term) => (
-        <div key={term.id}>
-          <h2>{term.word}</h2>
-          <p>{term.definition}</p>
-        </div>
-      ))}
+      {Array.isArray(terms) ? (
+        terms.map((term) => (
+          <div key={term.id}>
+            <h2>{term.word}</h2>
+            <p>{term.definition}</p>
+          </div>
+        ))
+      ) : (
+        <p>No terms available</p>
+      )}
     </div>
-    
-    
   );
 }
