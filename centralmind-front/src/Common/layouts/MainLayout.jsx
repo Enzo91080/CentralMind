@@ -8,11 +8,12 @@ export default function MainLayout() {
   const { user, logout } = useContext(AuthContext);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation(); // Récupère l'URL actuelle
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
-    navigate(ROUTES.AUTH.ADMIN_LOGIN); // Redirige vers la page d'administration après déconnexion
+    navigate(ROUTES.AUTH.ADMIN_LOGIN);
+    setMobileMenuOpen(false); // Ferme le menu après déconnexion
   };
 
   useEffect(() => {
@@ -58,12 +59,16 @@ export default function MainLayout() {
                 </Link>
               </>
             )}
-            {/* Afficher le bouton "Connexion" uniquement sur /admin/login */}
             {location.pathname === ROUTES.AUTH.ADMIN_LOGIN && !user ? (
-              <Link to={ROUTES.AUTH.ADMIN_LOGIN}>Connexion</Link>
+              <Link to={ROUTES.AUTH.ADMIN_LOGIN} className="hover:text-gray-300">
+                Connexion
+              </Link>
             ) : (
               user && (
-                <button onClick={handleLogout} className="text-red-500">
+                <button
+                  onClick={handleLogout}
+                  className="text-red-500 hover:text-red-300"
+                >
                   Déconnexion
                 </button>
               )
@@ -102,16 +107,30 @@ export default function MainLayout() {
             >
               Accueil
             </Link>
-            {user && (
-              <Link
-                to={ROUTES.TERMS}
-                onClick={() => setMobileMenuOpen(false)}
-                className="hover:text-gray-300 transition-colors duration-300"
-              >
-                Termes
-              </Link>
-            )}
-            {location.pathname === ROUTES.AUTH.ADMIN_LOGIN && !user ? (
+            {user ? (
+              <>
+                <Link
+                  to={ROUTES.TERMS}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-gray-300 transition-colors duration-300"
+                >
+                  Termes
+                </Link>
+                <Link
+                  to={ROUTES.CATEGORIES}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-gray-300 transition-colors duration-300"
+                >
+                  Catégories
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="hover:text-gray-300 transition-colors duration-300 text-left"
+                >
+                  Déconnexion
+                </button>
+              </>
+            ) : location.pathname === ROUTES.AUTH.ADMIN_LOGIN ? (
               <Link
                 to={ROUTES.AUTH.ADMIN_LOGIN}
                 onClick={() => setMobileMenuOpen(false)}
@@ -119,19 +138,7 @@ export default function MainLayout() {
               >
                 Connexion
               </Link>
-            ) : (
-              user && (
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="hover:text-gray-300 transition-colors duration-300"
-                >
-                  Déconnexion
-                </button>
-              )
-            )}
+            ) : null}
           </nav>
         )}
       </header>
