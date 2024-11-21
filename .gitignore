@@ -1,0 +1,17 @@
+# Node.js
+node_modules/
+.env
+
+# Logs
+logs/
+*.log
+
+# Build files
+/centralmind-front/build
+/centralmind-front/dist
+/centralmind-back/build
+/centralmind-back/dist
+
+# IDEs
+.vscode/
+.idea/

@@ -1,0 +1,16 @@
+{
+  "name": "central-mind",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm run start:front & npm run start:back",
+    "start:front": "cd centralmind-front && pnpm run dev",
+    "start:back": "cd centralmind-back && npm run dev",
+    "install": "npm run install:front && npm run install:back",
+    "install:front": "cd centralmind-front && pnpm install",
+    "install:back": "cd centralmind-back && npm install",
+    "build": "npm run build:front && npm run build:back",
+    "build:front": "cd centralmind-front && pnpm run build",
+    "build:back": "cd centralmind-back && npm run build",
+    "clean": "rm -rf centralmind-front/node_modules centralmind-back/node_modules"
+  }
+}
