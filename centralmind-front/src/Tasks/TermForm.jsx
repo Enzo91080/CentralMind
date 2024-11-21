@@ -18,7 +18,11 @@ const TermForm = ({
       onFinish={onFinish}
       initialValues={initialValues}
       layout="vertical"
-      aria-label={isEditing ? "Formulaire de modification de terme" : "Formulaire d'ajout de terme"}
+      aria-label={
+        isEditing
+          ? "Formulaire de modification de terme"
+          : "Formulaire d'ajout de terme"
+      }
     >
       {/* Mot */}
       <Form.Item
@@ -48,11 +52,12 @@ const TermForm = ({
           <Spin tip="Chargement des catégories..." />
         ) : (
           <Select placeholder="Sélectionnez une catégorie">
-            {categories.map((category) => (
-              <Select.Option key={category._id} value={category._id}>
-                {category.name}
-              </Select.Option>
-            ))}
+            {Array.isArray(categories) &&
+              categories.map((category) => (
+                <Select.Option key={category._id} value={category._id}>
+                  {category.name}
+                </Select.Option>
+              ))}
           </Select>
         )}
       </Form.Item>
