@@ -147,7 +147,7 @@ export default function MainLayout() {
       {/* Footer */}
       <footer className="bg-gray-800 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p>&copy; 2024 Organize Me. Tous droits réservés.</p>
+          <p>&copy; 2024 CentralMind. Tous droits réservés.</p>
         </div>
       </footer>
     </div>
