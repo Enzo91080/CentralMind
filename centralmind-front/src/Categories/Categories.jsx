@@ -1,15 +1,28 @@
 import { DeleteOutlined, EditOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Card, Form, Input, message, Modal, Popconfirm, Radio } from "antd";
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Radio,
+  Table,
+} from "antd";
 import { useEffect, useState } from "react";
 import categoryApi from "./services/category.api";
+import { useMediaQuery } from "react-responsive";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]); // Liste des catégories
   const [filteredCategories, setFilteredCategories] = useState([]); // Catégories filtrées
   const [searchQuery, setSearchQuery] = useState(""); // Recherche
   const [editingCategory, setEditingCategory] = useState(null); // Catégorie en cours d'édition
-  const [viewMode, setViewMode] = useState("grid"); // Mode d'affichage (grille ou liste)
   const [form] = Form.useForm(); // Formulaire pour la modale
+
+  // Détection de la vue mobile
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   // Récupérer les catégories depuis l'API
   const fetchCategories = async () => {
@@ -77,10 +90,49 @@ const Categories = () => {
     }
   };
 
-  // Changement de vue (grille ou liste)
-  const handleViewChange = (e) => {
-    setViewMode(e.target.value);
-  };
+  // Colonnes pour la table
+  const columns = [
+    {
+      title: "Nom",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+      render: (text) => (
+        <div className="truncate" style={{ maxWidth: 300 }}>
+          {text}
+        </div>
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, category) => (
+        <div className="flex space-x-2">
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleEditCategory(category)}
+          >
+            Modifier
+          </Button>
+          <Popconfirm
+            title="Êtes-vous sûr de vouloir supprimer cette catégorie ?"
+            onConfirm={() => handleDeleteCategory(category._id)}
+            okText="Oui"
+            cancelText="Non"
+          >
+            <Button type="danger" icon={<DeleteOutlined />}>
+              Supprimer
+            </Button>
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="p-4">
@@ -98,58 +150,54 @@ const Categories = () => {
         />
       </div>
 
-      {/* Sélecteur de mode d'affichage */}
-      <div className="mb-4 text-center">
-        <Radio.Group value={viewMode} onChange={handleViewChange}>
-          <Radio.Button value="grid">Grille</Radio.Button>
-          <Radio.Button value="list">Liste</Radio.Button>
-        </Radio.Group>
-      </div>
-
-      {/* Affichage des catégories */}
-      <div
-        className={
-          viewMode === "grid"
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-            : ""
-        }
-      >
-        {filteredCategories.map((category) => (
-          <Card
-            key={category._id}
-            hoverable
-            title={category.name}
-            className={
-              viewMode === "list"
-                ? "mb-4 shadow-none border p-4 rounded"
-                : "shadow-md"
-            }
-            actions={[
-              <Button
-                key={`edit-${category._id}`}
-                type="link"
-                icon={<EditOutlined />}
-                onClick={() => handleEditCategory(category)}
-              >
-                Modifier
-              </Button>,
-              <Popconfirm
-                key={`delete-${category._id}`}
-                title="Êtes-vous sûr de vouloir supprimer cette catégorie ?"
-                onConfirm={() => handleDeleteCategory(category._id)}
-                okText="Oui"
-                cancelText="Non"
-              >
-                <Button key={`delete-btn-${category._id}`} type="link" danger icon={<DeleteOutlined />}>
-                  Supprimer
-                </Button>
-              </Popconfirm>,
-            ]}
-          >
-            <p>{category.description}</p>
-          </Card>
-        ))}
-      </div>
+      {/* Affichage en fonction de la vue */}
+      {isMobile ? (
+        <div className="grid grid-cols-1 gap-4">
+          {filteredCategories.map((category) => (
+            <Card
+              key={category._id}
+              hoverable
+              title={category.name}
+              className="shadow-md"
+              actions={[
+                <Button
+                  key={`edit-${category._id}`}
+                  type="link"
+                  icon={<EditOutlined />}
+                  onClick={() => handleEditCategory(category)}
+                >
+                  Modifier
+                </Button>,
+                <Popconfirm
+                  key={`delete-${category._id}`}
+                  title="Êtes-vous sûr de vouloir supprimer cette catégorie ?"
+                  onConfirm={() => handleDeleteCategory(category._id)}
+                  okText="Oui"
+                  cancelText="Non"
+                >
+                  <Button
+                    key={`delete-btn-${category._id}`}
+                    type="link"
+                    danger
+                    icon={<DeleteOutlined />}
+                  >
+                    Supprimer
+                  </Button>
+                </Popconfirm>,
+              ]}
+            >
+              <p>{category.description}</p>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={filteredCategories}
+          rowKey={(record) => record._id}
+          pagination={{ pageSize: 10 }}
+        />
+      )}
 
       {/* Modale pour modifier une catégorie */}
       <Modal

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import termApi from "./services/term.api";
 import {
   Button,
@@ -7,25 +7,24 @@ import {
   Input,
   Popconfirm,
   message,
-  Card,
-  Radio,
+  Table,
   Select,
 } from "antd";
-import {
-  EditOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import { EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
+import AuthContext from "../Common/contexts/AuthContext";
+import { useMediaQuery } from "react-responsive";
+import categoryApi from "../Categories/services/category.api";
 
 export default function Terms({ fetchTerms, terms }) {
   const [filteredTerms, setFilteredTerms] = useState([]); // Liste des termes filtrés
+  const [categories, setCategories] = useState([]); // Liste complète des catégories
   const [searchQuery, setSearchQuery] = useState(""); // Recherche
   const [editingTerm, setEditingTerm] = useState(null); // Terme en cours d'édition
-  const [viewMode, setViewMode] = useState(
-    sessionStorage.getItem("viewMode") || "grid"
-  ); // Mode d'affichage (grille ou liste)
-  const [expandedTerms, setExpandedTerms] = useState(new Set()); // Gestion des descriptions longues
   const [form] = Form.useForm();
+  const { user } = useContext(AuthContext);
+
+  // Vérifie si on est sur un appareil mobile
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   useEffect(() => {
     if (Array.isArray(terms)) {
@@ -33,7 +32,20 @@ export default function Terms({ fetchTerms, terms }) {
     } else {
       setFilteredTerms([]); // Initialise avec une liste vide si terms n'est pas un tableau
     }
+
+    // Récupère les catégories lors du montage
+    fetchCategories();
   }, [terms]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryApi.getAllCategories();
+      setCategories(response);
+    } catch (err) {
+      message.error("Erreur lors de la récupération des catégories.");
+      console.error("Erreur lors de la récupération des catégories :", err);
+    }
+  };
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -44,7 +56,9 @@ export default function Terms({ fetchTerms, terms }) {
       const filtered = terms.filter(
         (term) =>
           term.word.toLowerCase().includes(lowerCaseQuery) ||
-          term.definition.toLowerCase().includes(lowerCaseQuery)
+          term.definition.toLowerCase().includes(lowerCaseQuery) ||
+          (term.category?.name &&
+            term.category.name.toLowerCase().includes(lowerCaseQuery))
       );
       setFilteredTerms(filtered); // Met à jour la liste des termes filtrés
     }
@@ -55,7 +69,7 @@ export default function Terms({ fetchTerms, terms }) {
     form.setFieldsValue({
       word: term.word,
       definition: term.definition,
-      category: term.category,
+      category: term.category?._id, // Utilise l'ID de la catégorie pour le Select
       examples: term.examples?.join(", "),
       relatedTerms: term.relatedTerms,
     });
@@ -63,11 +77,10 @@ export default function Terms({ fetchTerms, terms }) {
 
   const handleUpdateTerm = async (values) => {
     try {
-      // Transformation des champs si nécessaire
       const updatedTerm = {
         ...editingTerm,
         ...values,
-        examples: values.examples.split(",").map((example) => example.trim()), // Convertir les exemples en tableau
+        examples: values.examples.split(",").map((example) => example.trim()),
       };
       await termApi.updateTerm(editingTerm._id, updatedTerm);
       fetchTerms(); // Rafraîchit les termes
@@ -90,23 +103,53 @@ export default function Terms({ fetchTerms, terms }) {
     }
   };
 
-  const handleViewChange = (e) => {
-    const newViewMode = e.target.value;
-    setViewMode(newViewMode);
-    sessionStorage.setItem("viewMode", newViewMode);
-  };
-
-  const toggleExpandTerm = (termId) => {
-    setExpandedTerms((prev) => {
-      const newExpandedTerms = new Set(prev);
-      if (newExpandedTerms.has(termId)) {
-        newExpandedTerms.delete(termId);
-      } else {
-        newExpandedTerms.add(termId);
-      }
-      return newExpandedTerms;
-    });
-  };
+  // Colonnes de la table
+  const columns = [
+    {
+      title: "Mot",
+      dataIndex: "word",
+      key: "word",
+    },
+    {
+      title: "Définition",
+      dataIndex: "definition",
+      key: "definition",
+      render: (text) => (
+        <div className="truncate" style={{ maxWidth: 300 }}>
+          {text}
+        </div>
+      ),
+    },
+    {
+      title: "Catégorie",
+      dataIndex: "category",
+      key: "category",
+      render: (category) => category?.name || "Aucune",
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, term) => (
+        <div className="flex space-x-2">
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleEditTerm(term)}
+          >
+            Modifier
+          </Button>
+          <Popconfirm
+            title="Êtes-vous sûr de vouloir supprimer ce terme ?"
+            onConfirm={() => handleDeleteTerm(term._id)}
+            okText="Oui"
+            cancelText="Non"
+          >
+            <Button type="danger" icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="p-4">
@@ -115,7 +158,7 @@ export default function Terms({ fetchTerms, terms }) {
       </h1>
 
       {/* Barre de recherche */}
-      <div className="mb-4">
+      <div className="mb-4 max-w-md mx-auto">
         <Input
           placeholder="Rechercher un terme par mot ou définition"
           prefix={<SearchOutlined />}
@@ -124,94 +167,43 @@ export default function Terms({ fetchTerms, terms }) {
         />
       </div>
 
-      {/* Sélecteur de mode d'affichage */}
-      <div className="mb-4 text-center">
-        <Radio.Group value={viewMode} onChange={handleViewChange}>
-          <Radio.Button value="grid">Grille</Radio.Button>
-          <Radio.Button value="list">Liste</Radio.Button>
-        </Radio.Group>
-      </div>
-
-      {/* Affichage des termes */}
-      <div
-        className={
-          viewMode === "grid"
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-            : ""
-        }
-      >
-        {filteredTerms.map((term) => (
-          <div
-            key={term._id}
-            className={viewMode === "list" ? "mb-4 border p-4 rounded" : ""}
-          >
-            <Card
-              hoverable
-              style={{ width: "100%", position: "relative" }}
-              className={viewMode === "list" ? "shadow-none" : ""}
-            >
-              <Card.Meta
-                title={term.word}
-                description={
-                  <div>
-                    <div
-                      className={`text-gray-600 ${
-                        expandedTerms.has(term._id) ||
-                        term.definition.length <= 100
-                          ? ""
-                          : "truncate"
-                      }`}
-                      style={{
-                        maxHeight:
-                          expandedTerms.has(term._id) ||
-                          term.definition.length <= 100
-                            ? "none"
-                            : "4.5rem",
-                        overflow: expandedTerms.has(term._id)
-                          ? "visible"
-                          : "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {term.definition}
-                    </div>
-                    {term.definition.length > 100 && (
-                      <Button
-                        type="link"
-                        size="small"
-                        onClick={() => toggleExpandTerm(term._id)}
-                        className="p-0 mt-2"
-                      >
-                        {expandedTerms.has(term._id)
-                          ? "Voir moins"
-                          : "Voir plus"}
-                      </Button>
-                    )}
-                  </div>
-                }
-              />
-              <div className="mt-4 flex justify-between">
-                <Button
-                  type="primary"
-                  icon={<EditOutlined />}
-                  onClick={() => handleEditTerm(term)}
-                  style={{ marginRight: 8 }}
-                >
-                  Modifier
-                </Button>
-                <Popconfirm
-                  title="Êtes-vous sûr de vouloir supprimer ce terme ?"
-                  onConfirm={() => handleDeleteTerm(term._id)}
-                  okText="Oui"
-                  cancelText="Non"
-                >
-                  <Button type="danger" icon={<DeleteOutlined />} />
-                </Popconfirm>
-              </div>
-            </Card>
-          </div>
-        ))}
-      </div>
+      {/* Affichage en fonction de l'appareil */}
+      {isMobile ? (
+        <div className="grid grid-cols-1 gap-4">
+          {filteredTerms.map((term) => (
+            <div key={term._id} className="border p-4 rounded shadow">
+              <h2 className="text-lg font-bold">{term.word}</h2>
+              <p>{term.definition}</p>
+              {user && user.role === "admin" && (
+                <div className="flex justify-between mt-4">
+                  <Button
+                    type="primary"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEditTerm(term)}
+                  >
+                    Modifier
+                  </Button>
+                  <Popconfirm
+                    title="Êtes-vous sûr de vouloir supprimer ce terme ?"
+                    onConfirm={() => handleDeleteTerm(term._id)}
+                    okText="Oui"
+                    cancelText="Non"
+                  >
+                    <Button type="danger" icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={filteredTerms}
+          rowKey={(record) => record._id}
+          pagination={{ pageSize: 10 }}
+        />
+      )}
 
       {/* Modale pour modifier un terme */}
       <Modal
@@ -227,7 +219,7 @@ export default function Terms({ fetchTerms, terms }) {
           initialValues={{
             word: editingTerm?.word,
             definition: editingTerm?.definition,
-            category: editingTerm?.category,
+            category: editingTerm?.category?._id, // Pré-remplir avec l'ID de la catégorie
             examples: editingTerm?.examples?.join(", "),
             relatedTerms: editingTerm?.relatedTerms,
           }}
@@ -257,7 +249,7 @@ export default function Terms({ fetchTerms, terms }) {
             rules={[{ required: true, message: "La catégorie est requise !" }]}
           >
             <Select placeholder="Sélectionnez une catégorie">
-              {Array.isArray(terms) && terms.map((category) => (
+              {categories.map((category) => (
                 <Select.Option key={category._id} value={category._id}>
                   {category.name}
                 </Select.Option>
@@ -277,25 +269,6 @@ export default function Terms({ fetchTerms, terms }) {
               placeholder="Exemples séparés par des virgules"
               rows={4}
             />
-          </Form.Item>
-
-          {/* Termes liés */}
-          <Form.Item
-            name="relatedTerms"
-            label="Termes liés"
-            tooltip="Sélectionnez les termes liés (facultatif)"
-          >
-            <Select
-              mode="multiple"
-              allowClear
-              placeholder="Sélectionnez les termes liés"
-            >
-              {Array.isArray(filteredTerms) && filteredTerms.map((term) => (
-                <Select.Option key={term._id} value={term._id}>
-                  {term.word}
-                </Select.Option>
-              ))}
-            </Select>
           </Form.Item>
 
           {/* Boutons */}

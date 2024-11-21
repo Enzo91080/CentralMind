@@ -1,21 +1,19 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
+import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
+import { useContext, useState, useEffect } from "react";
 import AuthContext from "../contexts/AuthContext";
-import { useEffect } from "react";
 import lightLogo from "../../assets/central-mind-light.png";
 import { ROUTES } from "../router";
 
 export default function MainLayout() {
-  const { user, logout } = useContext(AuthContext); // Utilisation du contexte pour vérifier l'état de connexion
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false); // État pour gérer le menu mobile
+  const { user, logout } = useContext(AuthContext);
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation(); // Récupère l'URL actuelle
 
   const handleLogout = () => {
-    logout(); // Déconnecte l'utilisateur
-    navigate("/login"); // Redirige vers la page de connexion
+    logout();
+    navigate(ROUTES.AUTH.ADMIN_LOGIN); // Redirige vers la page d'administration après déconnexion
   };
-
-  // Débogage : vérifier l'état de `user` à chaque rendu
 
   useEffect(() => {
     console.log("User in MainLayout after login:", user);
@@ -27,16 +25,12 @@ export default function MainLayout() {
       <header className="bg-om-primary text-white shadow-md">
         <div className="container mx-auto flex items-center justify-between py-4 px-6">
           {/* Logo */}
-          <Link to="/" className="text-xl font-bold hover:text-gray-300">
+          <Link to={ROUTES.HOME} className="text-xl font-bold hover:text-gray-300">
             <img
               src={lightLogo}
-              className="
-              w-10 
-              h-10
-              inline-block mr-2
-            "
+              className="w-10 h-10 inline-block mr-2"
+              alt="Logo"
             />
-            {/* icon */}
             CentralMind
           </Link>
 
@@ -49,32 +43,36 @@ export default function MainLayout() {
               Accueil
             </Link>
             {user && (
-              <> 
-              <Link
-                to={ROUTES.TERMS}
-                className="hover:text-gray-300 transition-colors duration-300"
-              >
-                Termes
-              </Link>
-              <Link
-                to={ROUTES.CATEGORIES}
-                className="hover:text-gray-300 transition-colors duration-300"
-              >
-                Catégories
-              </Link>
+              <>
+                <Link
+                  to={ROUTES.TERMS}
+                  className="hover:text-gray-300 transition-colors duration-300"
+                >
+                  Termes
+                </Link>
+                <Link
+                  to={ROUTES.CATEGORIES}
+                  className="hover:text-gray-300 transition-colors duration-300"
+                >
+                  Catégories
+                </Link>
               </>
             )}
-            {user !== null ? (
-              <button onClick={handleLogout}>Déconnexion</button>
+            {/* Afficher le bouton "Connexion" uniquement sur /admin/login */}
+            {location.pathname === ROUTES.AUTH.ADMIN_LOGIN && !user ? (
+              <Link to={ROUTES.AUTH.ADMIN_LOGIN}>Connexion</Link>
             ) : (
-              <Link to="/login">Connexion</Link>
+              user && (
+                <button onClick={handleLogout} className="text-red-500">
+                  Déconnexion
+                </button>
+              )
             )}
           </nav>
 
           {/* Mobile Menu Button */}
           <button
-            id="mobile-menu-button"
-            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)} // Gérer l'ouverture/fermeture du menu
+            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden text-white focus:outline-none"
           >
             <svg
@@ -96,44 +94,43 @@ export default function MainLayout() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <nav
-            id="mobile-menu"
-            className="bg-slate-600 text-white flex flex-col gap-4 p-4 md:hidden"
-          >
+          <nav className="bg-slate-600 text-white flex flex-col gap-4 p-4 md:hidden">
             <Link
-              to="/"
+              to={ROUTES.HOME}
+              onClick={() => setMobileMenuOpen(false)}
               className="hover:text-gray-300 transition-colors duration-300"
-              onClick={() => setMobileMenuOpen(false)} // Fermer le menu après clic
             >
               Accueil
             </Link>
             {user && (
               <Link
-                to="/tasks"
+                to={ROUTES.TERMS}
+                onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-gray-300 transition-colors duration-300"
-                onClick={() => setMobileMenuOpen(false)} // Fermer le menu après clic
               >
-                Tâches
+                Termes
               </Link>
             )}
-            {user ? (
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setMobileMenuOpen(false); // Fermer le menu après déconnexion
-                }}
-                className="hover:text-gray-300 transition-colors duration-300"
-              >
-                Déconnexion
-              </button>
-            ) : (
+            {location.pathname === ROUTES.AUTH.ADMIN_LOGIN && !user ? (
               <Link
-                to="/login"
+                to={ROUTES.AUTH.ADMIN_LOGIN}
+                onClick={() => setMobileMenuOpen(false)}
                 className="hover:text-gray-300 transition-colors duration-300"
-                onClick={() => setMobileMenuOpen(false)} // Fermer le menu après clic
               >
                 Connexion
               </Link>
+            ) : (
+              user && (
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="hover:text-gray-300 transition-colors duration-300"
+                >
+                  Déconnexion
+                </button>
+              )
             )}
           </nav>
         )}

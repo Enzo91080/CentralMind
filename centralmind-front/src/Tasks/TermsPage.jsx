@@ -1,10 +1,11 @@
 import { Button, Form, message, Modal } from "antd";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import categoryApi from "../Categories/services/category.api";
 import PageCanvas from "../Common/components/Panels/PageCanvas";
 import TermForm from "./TermForm"; // Import du composant TermForm
 import Terms from "./Terms";
 import termApi from "./services/term.api";
+import AuthContext from "../Common/contexts/AuthContext";
 
 const TermsPage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -13,6 +14,8 @@ const TermsPage = () => {
   const [terms, setTerms] = useState([]);
   const [categories, setCategories] = useState([]);
   const [form] = Form.useForm();
+
+  const {user} = useContext(AuthContext); // Utilisation du contexte pour vérifier l'état de connexion
 
   const fetchData = async () => {
     try {
@@ -64,9 +67,14 @@ const TermsPage = () => {
     <>
       <PageCanvas title="Liste des termes">
         <PageCanvas.Actions>
-          <Button type="primary" onClick={showModal}>
-            Créer un terme
-          </Button>
+          {/* que si je suis connecté en tant qu'admin */}
+          {
+            user && user.role === "admin" && (
+              <Button type="primary" onClick={showModal}>
+                Créer un terme
+              </Button>
+            )
+          }
         </PageCanvas.Actions>
 
         <PageCanvas.Content>
