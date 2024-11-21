@@ -1,6 +1,6 @@
 import { DeleteOutlined, EditOutlined, SearchOutlined } from "@ant-design/icons";
 import { Button, Card, Form, Input, message, Modal, Popconfirm, Radio } from "antd";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import categoryApi from "./services/category.api";
 
 const Categories = () => {
@@ -126,6 +126,7 @@ const Categories = () => {
             }
             actions={[
               <Button
+                key={`edit-${category._id}`}
                 type="link"
                 icon={<EditOutlined />}
                 onClick={() => handleEditCategory(category)}
@@ -133,12 +134,13 @@ const Categories = () => {
                 Modifier
               </Button>,
               <Popconfirm
+                key={`delete-${category._id}`}
                 title="Êtes-vous sûr de vouloir supprimer cette catégorie ?"
                 onConfirm={() => handleDeleteCategory(category._id)}
                 okText="Oui"
                 cancelText="Non"
               >
-                <Button type="link" danger icon={<DeleteOutlined />}>
+                <Button key={`delete-btn-${category._id}`} type="link" danger icon={<DeleteOutlined />}>
                   Supprimer
                 </Button>
               </Popconfirm>,
