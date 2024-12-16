@@ -66,7 +66,6 @@ const TermForm = ({
       <Form.Item
         name="examples"
         label="Exemples"
-        rules={[{ required: true, message: "Ajoutez au moins un exemple!" }]}
       >
         <Input.TextArea
           placeholder="Ajoutez des exemples (séparés par des virgules)"

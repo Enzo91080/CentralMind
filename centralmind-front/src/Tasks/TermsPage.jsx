@@ -1,5 +1,5 @@
 import { Button, Form, message, Modal } from "antd";
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import categoryApi from "../Categories/services/category.api";
 import PageCanvas from "../Common/components/Panels/PageCanvas";
 import TermForm from "./TermForm"; // Import du composant TermForm
